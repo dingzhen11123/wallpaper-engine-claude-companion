@@ -1,0 +1,6 @@
+{
+  "name": "desktop-feel",
+  "version": "0.3.3",
+  "description": "让命令行版 Claude Code 更像桌面版：状态栏显示花费、任务完成通知、预算提醒、改动文件面板；小玩偶同步到桌面壁纸",
+  "types": "./types/index.d.ts"
+}

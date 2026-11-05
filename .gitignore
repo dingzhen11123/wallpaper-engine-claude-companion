@@ -1,0 +1,11 @@
+# 桥接服务运行时生成：口令、用户数据、本机路径
+bridge-token.js
+token.txt
+finder-data.json
+finder-data.json.tmp
+wallpaper-dir.txt
+
+# 编译产物
+*.exe
+bridge/tmp/
+node_modules/

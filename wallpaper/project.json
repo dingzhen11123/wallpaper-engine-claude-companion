@@ -1,0 +1,212 @@
+{
+	"contentrating": "Everyone",
+	"description": "和 Claude 联动的桌面伙伴：3D 小 Claude 有自己的小屋和工位，还有两只小猫；右侧是完整的 Claude 会话管理（搜索、分组、状态、置顶），中间是 Folia 的歌词舞台。需要后台运行 ~/.claude/wallpaper-bridge 里的桥接服务。",
+	"file": "index.html",
+	"general": {
+		"properties": {
+			"schemecolor": {
+				"order": 0,
+				"text": "ui_browse_properties_scheme_color",
+				"type": "color",
+				"value": "0.85098 0.46667 0.34118"
+			},
+			"showcards": {
+				"order": 100,
+				"text": "显示会话卡片",
+				"type": "bool",
+				"value": true
+			},
+			"showquota": {
+				"order": 103,
+				"text": "显示额度",
+				"type": "bool",
+				"value": true
+			},
+			"showclock": {
+				"order": 103,
+				"text": "显示时钟",
+				"type": "bool",
+				"value": true
+			},
+			"mirror": {
+				"order": 104,
+				"text": "侧栏放左边",
+				"type": "bool",
+				"value": false
+			},
+			"petscale": {
+				"order": 105,
+				"text": "玩偶大小（%）",
+				"type": "slider",
+				"min": 50,
+				"max": 130,
+				"step": 5,
+				"value": 100
+			},
+			"roam": {
+				"order": 106,
+				"text": "让小 Claude 满屏溜达、去面板串门",
+				"type": "bool",
+				"value": true
+			},
+			"dance": {
+				"order": 107,
+				"text": "放歌时跟着跳舞",
+				"type": "bool",
+				"value": true
+			},
+			"dj": {
+				"order": 108,
+				"text": "允许它偶尔自己切下一首（约 20~40 分钟一次）",
+				"type": "bool",
+				"value": true
+			},
+			"showhome": {
+				"order": 109,
+				"text": "显示小岛（小屋、工位、两只猫）",
+				"type": "bool",
+				"value": true
+			},
+			"catname": {
+				"order": 110,
+				"text": "奶牛猫的名字",
+				"type": "textinput",
+				"value": "煤球"
+			},
+			"catname2": {
+				"order": 111,
+				"text": "布偶猫的名字",
+				"type": "textinput",
+				"value": "棉花"
+			},
+			"showsys": {
+				"order": 104,
+				"text": "显示系统占用（CPU / 内存 / 显卡）",
+				"type": "bool",
+				"value": true
+			},
+			"clockpos": {
+				"order": 103.5,
+				"text": "时钟位置",
+				"type": "combo",
+				"value": "center",
+				"options": [
+					{
+						"label": "屏幕顶部居中",
+						"value": "center"
+					},
+					{
+						"label": "右侧栏顶部",
+						"value": "side"
+					}
+				]
+			},
+			"stagemode": {
+				"order": 102.2,
+				"text": "歌词样式",
+				"type": "combo",
+				"value": "random",
+				"options": [
+					{
+						"label": "随机：全部样式（每首歌换一种）",
+						"value": "random"
+					},
+					{
+						"label": "随机：只用轻量样式（省显卡）",
+						"value": "random-light"
+					},
+					{
+						"label": "回环（弧线大字）",
+						"value": "claddagh"
+					},
+					{
+						"label": "流光（单行居中）",
+						"value": "classic"
+					},
+					{
+						"label": "心象（字符云）",
+						"value": "cadenza"
+					},
+					{
+						"label": "云阶（错落阶梯）",
+						"value": "partita"
+					},
+					{
+						"label": "倾诉（双行倾斜）",
+						"value": "tilt"
+					},
+					{
+						"label": "浮名（杂志大字）",
+						"value": "fume"
+					},
+					{
+						"label": "群唱（对话气泡）",
+						"value": "cappella"
+					},
+					{
+						"label": "莫奈（海报）",
+						"value": "monet"
+					},
+					{
+						"label": "静止（三行静态，最省）",
+						"value": "still"
+					},
+					{
+						"label": "花火",
+						"value": "hanabi"
+					},
+					{
+						"label": "绘光（光柱）",
+						"value": "lumiere"
+					},
+					{
+						"label": "商籁（排版 PV）",
+						"value": "sonnet"
+					},
+					{
+						"label": "凝彩（色块拼贴）",
+						"value": "tempera"
+					},
+					{
+						"label": "镜台（3D 景深）",
+						"value": "diorama"
+					},
+					{
+						"label": "町景（3D 小店）",
+						"value": "machi"
+					},
+					{
+						"label": "雾笺（雾上写字）",
+						"value": "nebbia"
+					},
+					{
+						"label": "时计（机械钟表）",
+						"value": "pendolo"
+					}
+				]
+			},
+			"stagesize": {
+				"order": 102.4,
+				"text": "歌词舞台大小（%）",
+				"type": "slider",
+				"min": 60,
+				"max": 130,
+				"step": 5,
+				"value": 100
+			},
+			"showstage": {
+				"order": 101,
+				"text": "显示歌词舞台",
+				"type": "bool",
+				"value": true
+			}
+		}
+	},
+	"preview": "preview.jpg",
+	"tags": [
+		"Technology"
+	],
+	"title": "Claude 桌面伙伴",
+	"type": "web",
+	"version": 0
+}

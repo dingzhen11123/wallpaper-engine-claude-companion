@@ -1,0 +1,4 @@
+本目录是用 Folia（https://github.com/chthollyphile/folia-major，AGPL-3.0）的歌词渲染代码打包出来的。
+使用的 Folia 版本：8abd1091c9a3a3df8670c2708bf1eb9f6dfe7329
+打包入口和替换的模块在上一级的 stage-src/，Folia 源码未修改。重新打包：node stage-src/build.mjs
+第三方数据的授权见 licenses/。

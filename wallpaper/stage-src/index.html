@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>歌词舞台</title>
+<link rel="stylesheet" href="stage.css">
+<style>html, body, #root { margin: 0; width: 100%; height: 100%; overflow: hidden; background: transparent !important; color-scheme: normal; }
+/* 翻译字幕：Folia 把它贴在画面底部（距底 32px），这里被播放条压住，又落在四边羽化的范围里。
+   抬到播放条上方（舞台内部按 1080 高排版），字色提亮，靠描影保证亮天空上也看得清 */
+.absolute.left-0.right-0.text-center.space-y-2.px-4.z-20 { bottom: 215px !important; }
+.absolute.left-0.right-0.text-center.space-y-2.px-4.z-20 * { color: #f2efe9 !important; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.75), 0 2px 10px rgba(0, 0, 0, 0.55) !important; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="stage.js"></script>
+</body>
+</html>

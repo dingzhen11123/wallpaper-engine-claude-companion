@@ -1,0 +1,5 @@
+{
+  "name": "my-mods",
+  "owner": { "name": "claude-companion" },
+  "plugins": [{ "name": "desktop-feel", "source": "./" }]
+}
