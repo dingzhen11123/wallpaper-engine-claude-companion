@@ -120,7 +120,8 @@ static partial class Bridge
             Bounds = new Rectangle(x, y, w, h);
             Box.Left = 0;
             Box.Width = w;
-            Box.Top = Math.Max(0, (h - Box.Height) / 2);
+            // 微软雅黑在原生输入框里字形偏下，往上提一点，点开时才不会和页面上的字错开
+            Box.Top = Math.Max(0, (h - Box.Height) / 2 - fontPx / 7);
             Show();
             Activate();
             ForceForeground();

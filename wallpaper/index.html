@@ -497,6 +497,8 @@ body[data-phase="working"] .now .dot, body[data-phase="thinking"] .now .dot, bod
 }
 .f-search:hover { border-color: rgba(237, 230, 218, 0.2); }
 .f-search.is-typing { border-color: var(--orange); }
+/* 原生输入框盖在上面时，页面自己的文字不画，免得从边缘露出来叠成重影 */
+.f-search.is-typing .f-q { visibility: hidden; }
 .f-search svg { flex: none; color: var(--t3); }
 .f-q { flex: 1; min-width: 0; font-size: var(--fs-m); color: var(--t1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .f-q.is-empty { color: var(--t3); }
@@ -1024,7 +1026,7 @@ body.clock-center .sys { justify-content: center; }
     const str = v => (typeof v === 'string' ? v : '')
     const num = v => (typeof v === 'number' && isFinite(v) ? v : null)
     const limits = Array.isArray(s.limits)
-      ? s.limits.filter(l => l && typeof l === 'object').map(l => ({ kind: str(l.kind), percent: num(l.percent) || 0, resetsAt: str(l.resetsAt) || null }))
+      ? s.limits.filter(l => l && typeof l === 'object' && l.kind && typeof l.kind === 'string').map(l => ({ kind: str(l.kind), percent: num(l.percent) || 0, resetsAt: str(l.resetsAt) || null }))
       : []
     return {
       id: s.id,
@@ -1115,7 +1117,7 @@ body.clock-center .sys { justify-content: center; }
     renderPet(main)
     renderNow(main)
     // 额度面板先定下来，卡片区才知道自己有多高
-    renderQuota(main, list)
+    renderQuota(list)
     renderConn(list)
     scheduleElapsed(main)
     updateDance()
@@ -1261,25 +1263,50 @@ body.clock-center .sys { justify-content: center; }
   }
   setTimeout(loadPlan, 500)
   setInterval(() => { if (!isPaused) loadPlan() }, 600000)
-  function renderQuota(main, list) {
-    const source = main && main.limits.length ? main : list.find(s => s.limits.length)
-    let limits = source ? source.limits : []
-    let age = ''
-    if (limits.length) {
-      const saved = store.get('quota')
-      if (!saved || JSON.stringify(saved.limits) !== JSON.stringify(limits) || Date.now() - saved.at > 60000) store.set('quota', { limits, at: Date.now() })
-    } else {
-      const saved = store.get('quota')
-      if (saved && Array.isArray(saved.limits)) {
-        limits = saved.limits
-        const min = Math.round((Date.now() - saved.at) / 60000)
-        age = min < 1 ? '刚刚' : min < 60 ? min + ' 分钟前' : Math.round(min / 60) + ' 小时前'
+  // 会话都闲着时状态不变，不会重绘：额度的重置倒计时和过期归零靠这里走
+  setInterval(() => { if (!isPaused) safeRender() }, 60000)
+  // 每个会话上报的只是它自己最后一次收到回复时的额度，闲着的会话一直留着旧数，不能只看某一个。
+  // 同一个额度窗口里用量只增不减，所以合并所有来源：同类额度取最新的窗口，窗口里取最大值。
+  // 重置时间和最新的相差 10 分钟以内算同一个窗口；窗口已经过了就是还没有新数据，按 0 算。
+  function mergeLimits(sources, now) {
+    const byKind = new Map()
+    for (const limits of sources) {
+      for (const one of limits) {
+        if (!byKind.has(one.kind)) byKind.set(one.kind, [])
+        byKind.get(one.kind).push({ one, at: Date.parse(one.resetsAt) || 0 })
       }
+    }
+    return [...byKind].map(([kind, items]) => {
+      const newest = items.reduce((a, b) => (b.at > a.at ? b : a))
+      const percents = items.filter(x => newest.at - x.at <= 600000).map(x => Number(x.one.percent) || 0)
+      const expired = newest.at && newest.at <= now
+      return { kind, percent: expired ? 0 : Math.max(...percents), resetsAt: newest.one.resetsAt }
+    })
+  }
+  // 本地存的数据也可能不合格式，用之前先筛一遍
+  function savedQuotaLimits(saved) {
+    if (!saved || !Array.isArray(saved.limits)) return []
+    return saved.limits.filter(l => l && typeof l.kind === 'string' && l.kind && Number.isFinite(l.percent) && (l.resetsAt === null || typeof l.resetsAt === 'string'))
+  }
+  function renderQuota(list) {
+    const saved = store.get('quota')
+    const savedAt = saved && Number.isFinite(saved.at) ? saved.at : 0
+    const savedLimits = savedQuotaLimits(saved)
+    const live = list.filter(s => s.limits.length).map(s => s.limits)
+    // 有会话时，存下来的值只用来防止回退；没有重置时间的额度分不清窗口，存的值不参与，免得旧的大数永远留着
+    const limits = mergeLimits(live.length ? [...live, savedLimits.filter(l => Date.parse(l.resetsAt))] : [savedLimits], Date.now())
+    let age = ''
+    if (live.length) {
+      if (!saved || JSON.stringify(saved.limits) !== JSON.stringify(limits) || Date.now() - savedAt > 60000) store.set('quota', { limits, at: Date.now() })
+    } else if (limits.length && savedAt) {
+      const min = Math.round((Date.now() - savedAt) / 60000)
+      age = min < 1 ? '刚刚' : min < 60 ? min + ' 分钟前' : Math.round(min / 60) + ' 小时前'
     }
     const key = JSON.stringify(limits) + age + Math.floor(Date.now() / 60000)
     if (key === quotaKey) return
     quotaKey = key
     setText('quotaAge', age)
+    $('quotaAge').hidden = !age
     const rows = $('quotaRows')
     rows.textContent = ''
     if (!limits.length) {
@@ -6267,14 +6294,22 @@ body.clock-center .sys { justify-content: center; }
       inputTimer = 0
       let d = null
       try {
-        const res = await fetch(url('/input/state'), { cache: 'no-store' })
+        const res = await fetch(url('/input/state'), { cache: 'no-store', signal: AbortSignal.timeout(3000) })
         if (res.ok) d = await res.json()
       } catch (err) {}
       if (gen !== inputGen) return
-      if (!d || isPaused) return stopInputPoll()
+      if (!d || isPaused) {
+        // 桥接没回应：收起输入框，页面文字重新显示出来
+        if (!d && inputOpened) {
+          inputOpened = false
+          api('/input/close', '').catch(() => {})
+        }
+        return stopInputPoll()
+      }
       setQuery(typeof d.text === 'string' ? d.text : '')
       for (const key of Array.isArray(d.keys) ? d.keys : []) onKey(key)
-      if (d.open) inputTimer = setTimeout(pollInput, 40, gen)
+      // Wallpaper Engine 里 setTimeout 的第三个参数传不到回调，只能用闭包
+      if (d.open) inputTimer = setTimeout(() => pollInput(gen), 40)
       else {
         inputOpened = false
         stopInputPoll()
@@ -6307,11 +6342,12 @@ body.clock-center .sys { justify-content: center; }
         return
       }
       // 原生输入框盖在这个位置；页面坐标乘上缩放比就是屏幕物理像素（壁纸铺满主屏，原点相同）
+      // 左边对齐页面文字的起点，点开时字不会跳；右边留出清空按钮
       const r = $('fSearch').getBoundingClientRect()
-      const pad = 34
+      const left = $('fQ').getBoundingClientRect().left
       const dpr = window.devicePixelRatio || 1
       const fontPx = parseFloat(getComputedStyle($('fQ')).fontSize) * dpr
-      const rect = [r.left + pad, r.top + 2, r.width - pad - 34, r.height - 4].map(n => Math.round(n * dpr))
+      const rect = [left, r.top + 2, r.right - 34 - left, r.height - 4].map(n => Math.round(n * dpr))
       stopInputPoll()
       const gen = inputGen
       inputOpened = true
@@ -6326,7 +6362,7 @@ body.clock-center .sys { justify-content: center; }
           return
         }
         $('fSearch').classList.add('is-typing')
-        inputTimer = setTimeout(pollInput, 60, gen)
+        inputTimer = setTimeout(() => pollInput(gen), 60)
       } catch (err) {
         inputOpened = false
         toast('搜索框打不开：' + err.message)
