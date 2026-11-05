@@ -1,5 +1,9 @@
 # Wallpaper Engine Claude 伙伴
 
+![壁纸预览](docs/preview.png)
+
+<sub>截图里的对话内容、歌词和专辑封面做了马赛克处理。</sub>
+
 一张和 Claude 联动的 [Wallpaper Engine](https://www.wallpaperengine.io/) 网页壁纸：桌面上住着一个 3D 小 Claude 和两只猫，右边管理你所有的 Claude 对话，中间是会跟着歌走的歌词。
 
 > 这是个人爱好项目，**不是 Anthropic 或 Wallpaper Engine 的官方产品**，与它们没有关联。
