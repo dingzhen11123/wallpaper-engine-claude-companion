@@ -327,6 +327,16 @@ static partial class Bridge
                     dirs.Add(Path.Combine(d, "LocalCache", "Roaming", "Claude", "claude-code-sessions"));
         }
         catch { }
+        // 2026-11 起桌面端把数据搬到 %LOCALAPPDATA%\Claude-Data\<包名>（启动参数 --user-data-dir），旧目录不再写入。
+        // 放在最后：ActiveRoot 打平时后面的优先
+        try
+        {
+            string data = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Claude-Data");
+            if (Directory.Exists(data))
+                foreach (var d in Directory.GetDirectories(data))
+                    dirs.Add(Path.Combine(d, "claude-code-sessions"));
+        }
+        catch { }
         return dirs;
     }
 
