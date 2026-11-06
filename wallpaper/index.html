@@ -958,6 +958,7 @@ body.clock-center .sys { justify-content: center; }
   const stillSvg = svg => svg.replace(/<style>[\s\S]*?<\/style>/, '')
 
   let sessions = []
+  let desktopCliIds = null // 桌面端当前账号的会话 id，由右侧会话列表读到后填入；null 表示还没读到
   let isOnline = null
   let pinnedId = ''
   let mainId = ''
@@ -1284,20 +1285,32 @@ body.clock-center .sys { justify-content: center; }
     })
   }
   // 本地存的数据也可能不合格式，用之前先筛一遍
-  function savedQuotaLimits(saved) {
+  function savedQuotaLimits(saved, desktopIds) {
     if (!saved || !Array.isArray(saved.limits)) return []
+    // 存的值记着来自哪些会话。它们都不在当前账号的列表里，说明桌面端换过账号，不能再用
+    if (!isDemo && desktopIds && Array.isArray(saved.from) && !saved.from.some(id => desktopIds.has(id))) return []
     return saved.limits.filter(l => l && typeof l.kind === 'string' && l.kind && Number.isFinite(l.percent) && (l.resetsAt === null || typeof l.resetsAt === 'string'))
   }
+  // 额度只看桌面端当前账号的会话。别的程序用 CLI 登录跑的 Claude（可能是另一个账号）也会上报额度，
+  // 它的窗口重置时间可能更晚，混进来会把真实额度盖掉。列表还没读到时一个都不算，先显示存下来的值。
+  function quotaSources(list, desktopIds) {
+    if (isDemo) return list.filter(s => s.limits.length)
+    return desktopIds ? list.filter(s => s.limits.length && desktopIds.has(s.id)) : []
+  }
+  // 换键名：旧键里可能存着别的账号的额度，不能再读。演示数据单独存，不混进真实额度
+  const QUOTA_KEY = isDemo ? 'quota.demo' : 'quota.desktop'
+  try { localStorage.removeItem('quota') } catch (err) {}
   function renderQuota(list) {
-    const saved = store.get('quota')
+    const saved = store.get(QUOTA_KEY)
     const savedAt = saved && Number.isFinite(saved.at) ? saved.at : 0
-    const savedLimits = savedQuotaLimits(saved)
-    const live = list.filter(s => s.limits.length).map(s => s.limits)
+    const savedLimits = savedQuotaLimits(saved, desktopCliIds)
+    const sources = quotaSources(list, desktopCliIds)
+    const live = sources.map(s => s.limits)
     // 有会话时，存下来的值只用来防止回退；没有重置时间的额度分不清窗口，存的值不参与，免得旧的大数永远留着
     const limits = mergeLimits(live.length ? [...live, savedLimits.filter(l => Date.parse(l.resetsAt))] : [savedLimits], Date.now())
     let age = ''
     if (live.length) {
-      if (!saved || JSON.stringify(saved.limits) !== JSON.stringify(limits) || Date.now() - savedAt > 60000) store.set('quota', { limits, at: Date.now() })
+      if (!saved || JSON.stringify(saved.limits) !== JSON.stringify(limits) || Date.now() - savedAt > 60000) store.set(QUOTA_KEY, { limits, from: sources.map(s => s.id), at: Date.now() })
     } else if (limits.length && savedAt) {
       const min = Math.round((Date.now() - savedAt) / 60000)
       age = min < 1 ? '刚刚' : min < 60 ? min + ' 分钟前' : Math.round(min / 60) + ' 小时前'
@@ -5840,7 +5853,8 @@ body.clock-center .sys { justify-content: center; }
     async function poll() {
       pollTimer = 0
       if (isPaused || pollCtl) return
-      if (document.body.classList.contains('hide-cards')) return schedule(5000)
+      // 只关卡片时还要接着读：额度靠这份列表判断来源
+      if (document.body.classList.contains('hide-cards') && document.body.classList.contains('hide-quota')) return schedule(5000)
       const ctl = new AbortController()
       pollCtl = ctl
       const t = setTimeout(() => ctl.abort(), 15000)
@@ -5861,6 +5875,12 @@ body.clock-center .sys { justify-content: center; }
         state.hash = typeof data.h === 'string' ? data.h : ''
         state.now = typeof data.now === 'number' ? data.now : Date.now()
         state.sessions = data.sessions.filter(s => s && typeof s.id === 'string').map(normRow)
+        const ids = new Set(state.sessions.map(s => s.cli).filter(Boolean))
+        const isSame = desktopCliIds && desktopCliIds.size === ids.size && [...ids].every(id => desktopCliIds.has(id))
+        if (!isSame) {
+          desktopCliIds = ids
+          safeRender() // 额度的来源变了，重算
+        }
         render()
       } else if (Date.now() - state.renderedAt > 30000) {
         // 内容没变也隔一会儿重画一次：「几分钟前」要走字
